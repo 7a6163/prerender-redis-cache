@@ -16,6 +16,17 @@ jobs:
       contents: write  # required for creating GitHub releases
       id-token: write  # required to use OIDC
 
+    services:
+      redis:
+        image: valkey/valkey:9-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
     - uses: actions/checkout@v5
 
@@ -25,7 +36,7 @@ jobs:
 
     - run: npm ci
 
-    - run: npm test
+    - run: npm test -- --forceExit
 
     - uses: JS-DevTools/npm-publish@v4
 
