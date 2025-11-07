@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2025-11-07
+
+### 🚀 Protocol-Agnostic Cache Keys
+
+This release implements protocol-agnostic cache keys, allowing HTTP and HTTPS versions of the same URL to share cached content.
+
+### Added
+- **Protocol-Agnostic Cache Keys**: HTTP and HTTPS URLs now share the same cache
+  - Added `normalizeUrlForKey()` function to strip protocol from URLs
+  - Cache keys now use format: `www.example.com/path` (without `http://` or `https://`)
+  - Improves cache hit rate when URLs are accessed via both protocols
+  - Reduces duplicate cache entries
+
+### Changed
+- **Cache Key Format**: All Redis keys are now protocol-agnostic
+  - `handleCacheGet()`: Uses normalized key for cache lookup
+  - `pageLoaded()`: Stores cache with normalized key
+  - `handleSingleDeletion()`: Deletes cache using normalized key
+  - `handlePatternDeletion()`: Pattern matching with normalized keys
+
+### Benefits
+- **Higher Cache Hit Rate**: HTTP and HTTPS requests share same cache entry
+- **Reduced Storage**: No duplicate entries for same URL with different protocols
+- **Better Performance**: More cache hits = fewer re-renders
+- **Shorter Keys**: Keys are shorter without protocol prefix
+
+### Example
+
+**Before (1.0.3):**
+```
+http://www.example.com/page   → Cache Key: "http://www.example.com/page"
+https://www.example.com/page  → Cache Key: "https://www.example.com/page"
+(Two separate cache entries)
+```
+
+**After (1.0.4):**
+```
+http://www.example.com/page   → Cache Key: "www.example.com/page"
+https://www.example.com/page  → Cache Key: "www.example.com/page"
+(Shared cache entry)
+```
+
+### Compatibility
+- Fully backward compatible - existing cached entries will remain but won't be matched
+- Recommend clearing cache after upgrade: `FLUSHALL` or wait for TTL expiration
+- No breaking changes to API or configuration
+
 ## [1.0.3] - 2025-11-07
 
 ### 🚀 Testing Infrastructure Improvements

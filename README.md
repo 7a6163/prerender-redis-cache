@@ -162,6 +162,12 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and detailed changes.
 
 ## Recent Updates
 
+### v1.0.4 (2025-11-07)
+- 🔧 **CI/CD**: Fixed Jest hanging issue with `--forceExit` flag
+- 🔧 **CI/CD**: Added Redis service to publish workflow
+- 🔧 **Testing**: Added `_closeConnection()` method for proper cleanup
+- 📦 **Consistency**: Unified Redis image to `valkey/valkey:9-alpine` across all workflows
+
 ### v1.0.3 (2025-11-07)
 - ⚡ **Testing Infrastructure**: Migrated from redis-mock to real Redis integration tests
 - 🚀 **Performance**: 3x faster test execution (~5s vs ~15s)
