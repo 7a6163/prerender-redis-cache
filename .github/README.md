@@ -9,7 +9,7 @@ This directory contains GitHub-specific configuration files.
 Automated testing workflow that runs on every push and pull request.
 
 **Features:**
-- ✅ Runs tests on multiple Node.js versions (14, 16, 18, 20)
+- ✅ Runs tests on multiple Node.js versions (20, 22, 24)
 - ✅ Generates code coverage reports
 - ✅ Uploads coverage to Codecov
 - ✅ Uses npm cache for faster builds
