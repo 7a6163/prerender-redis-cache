@@ -13,3 +13,10 @@ results
 
 npm-debug.log
 node_modules
+
+# Test coverage
+coverage
+.nyc_output
+
+# Jest
+*.test.js.snap
