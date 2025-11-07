@@ -1,6 +1,10 @@
 prerender-redis-cache
 =======================
 
+[![Tests](https://github.com/7a6163/prerender-redis-cache/actions/workflows/test.yml/badge.svg)](https://github.com/7a6163/prerender-redis-cache/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/7a6163/prerender-redis-cache/branch/master/graph/badge.svg)](https://codecov.io/gh/7a6163/prerender-redis-cache)
+[![npm version](https://badge.fury.io/js/prerender-redis-cache.svg)](https://www.npmjs.com/package/prerender-redis-cache)
+
 Prerender plugin for Redis caching, to be used with the prerender node application from https://github.com/prerender/prerender.
 
 How it works
