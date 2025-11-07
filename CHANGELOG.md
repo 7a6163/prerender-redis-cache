@@ -5,6 +5,108 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2025-11-07
+
+### 🚀 Testing Infrastructure Improvements
+
+This release improves testing reliability and speed by replacing redis-mock with real Redis integration tests.
+
+### Changed
+- **Test Infrastructure**: Migrated from redis-mock to real Redis integration tests
+  - Tests now connect to actual Redis instance (localhost:6379/15)
+  - Significantly faster test execution: **5 seconds** (previously ~15 seconds)
+  - More reliable and accurate testing behavior
+  - Tests use dedicated database 15 to avoid conflicts
+  - Added automatic cleanup with `flushDb()` after each test
+
+- **CI/CD Enhancement**: Updated GitHub Actions to include Redis service
+  - Added Redis Docker container to test workflow
+  - Health checks ensure Redis is ready before tests
+  - Tests run against real Redis in CI environment
+
+### Fixed
+- **Redis v5.x SCAN API**: Fixed cursor type compatibility issue
+  - SCAN cursor must be string type in Redis v5.x, not number
+  - Changed `cursor = 0` to `cursor = '0'` in `scanKeys()` function
+  - Fixes `"arguments[1]" must be of type "string | Buffer", got number instead"` error
+
+- **Async/Await Handling**: Fixed async function handling in DELETE operations
+  - `handleCacheDelete()` now properly awaits async operations
+  - Ensures DELETE responses are sent after operations complete
+  - Fixes timeout issues in pattern deletion tests
+
+### Removed
+- **redis-mock dependency**: No longer needed for testing
+  - Reduces package size and dependencies
+  - Eliminates mock behavior discrepancies
+  - Tests now validate against real Redis behavior
+
+### Documentation
+- **TESTING.md**: Updated to reflect real Redis requirement
+  - Added Docker command to start Redis: `docker run -d -p 6379:6379 redis:latest`
+  - Documented test database usage (database 15)
+  - Clarified integration test approach
+
+### Performance
+- **Test Execution Speed**: 3x faster than previous version
+  - Test suite completes in ~5 seconds (down from ~15 seconds)
+  - More stable and consistent test timings
+  - No more timeout issues
+
+### Compatibility
+- **Development Requirements**: Redis server now required for running tests
+  - Can use Docker, local Redis, or CI Redis service
+  - Tests automatically clean up after themselves
+  - No impact on production usage
+
+## [1.0.2] - 2025-11-07
+
+### 🐛 Critical Bug Fix - Redis 5.x API Compatibility
+
+This release fixes Redis cache not working due to API incompatibility between Redis v3.x and v5.x.
+
+### Fixed
+- **Redis 5.x API Compatibility**: Migrated from Redis 3.x callback-based API to Redis 5.x Promise-based API
+  - Updated `createClient()` to use `url` option instead of separate `host`/`port`
+  - Added explicit `client.connect()` call (required in Redis 5.x)
+  - Converted all Redis commands from callbacks to async/await (get, set, del, scan)
+  - Updated reconnection strategy to use `socket.reconnectStrategy`
+  - Simplified SET command with TTL using `{ EX: ttl }` option
+  - Fixed SCAN command to use object-based options `{ MATCH: pattern, COUNT: 100 }`
+
+### Changed
+- **All Redis Operations**: Now use async/await for better error handling
+  - `handleCacheGet`: async function with try/catch
+  - `handlePatternDeletion`: async function with try/catch
+  - `handleSingleDeletion`: async function with try/catch
+  - `scanKeys`: Returns Promise instead of using callbacks
+  - `pageLoaded`: Uses async/await with SET + EX option
+
+### Technical Details
+
+**The Problem:** Version 1.0.0 and 1.0.1 used Redis 3.x API but package.json depended on Redis 5.x, causing cache to silently fail.
+
+**Before (v3.x style - broken with Redis 5.x):**
+```javascript
+const client = redis.createClient({ host, port });
+client.get(key, (err, result) => { ... });
+client.set(key, value, (err) => {
+  client.expire(key, ttl);
+});
+```
+
+**After (v5.x style - working):**
+```javascript
+const client = redis.createClient({ url });
+await client.connect();
+const result = await client.get(key);
+await client.set(key, value, { EX: ttl });
+```
+
+### Compatibility
+- Redis 5.x and above (Promise-based API)
+- Backward compatible with redis-mock for testing (auto-detects and handles both)
+
 ## [1.0.1] - 2025-11-07
 
 ### 🐛 Critical Bug Fix

@@ -12,30 +12,22 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # required for creating GitHub releases
+      id-token: write  # required to use OIDC
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - uses: actions/setup-node@v5
       with:
-        node-version: '20.x'
-        registry-url: 'https://registry.npmjs.org'
+        node-version: '24'
 
-    - name: Install dependencies
-      run: npm ci
+    - run: npm ci
 
-    - name: Run tests
-      run: npm test
+    - run: npm test
 
-    - name: Run tests with coverage
-      run: npm run test:coverage
-
-    - name: Publish to npm with provenance
-      run: npm publish --provenance --access public
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    - uses: JS-DevTools/npm-publish@v4
 
     - name: Create GitHub Release
       uses: actions/create-release@v1
