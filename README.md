@@ -147,6 +147,10 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and detailed changes.
 
 ## Recent Updates
 
+### v1.0.1 (2025-11-07)
+- 🐛 **Critical Bug Fix**: Fixed `ClientClosedError` on startup by moving Redis auth/select to ready event handler
+
+### v1.0.0 (2025-01-07)
 - ✅ **Cache Invalidation**: DELETE requests for single URL and pattern-based deletion
 - ✅ **ES6 Refactoring**: Modern JavaScript with arrow functions, const/let, template literals
 - ✅ **Comprehensive Tests**: 33+ tests with 77.94% coverage

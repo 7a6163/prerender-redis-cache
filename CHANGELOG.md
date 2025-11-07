@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-11-07
+
+### 🐛 Critical Bug Fix
+
+This release fixes a critical connection issue that prevented the plugin from initializing properly.
+
+### Fixed
+- **Redis Connection Initialization**: Fixed `ClientClosedError: The client is closed` error
+  - Moved `client.select()` and `client.auth()` calls from module load time to `ready` event handler
+  - Ensures Redis commands are only executed after connection is established
+  - Prevents race condition between client creation and command execution
+  - Set `redisOnline` flag only after successful authentication and database selection
+
+### Technical Details
+
+The issue occurred because the code was calling `client.select()` and `client.auth()` immediately after creating the client, before the connection was established. This caused a `ClientClosedError`.
+
+**Solution:** Move all Redis commands into the `ready` event handler to ensure they execute only after the connection is established.
+
 ## [1.0.0] - 2025-01-07
 
 ### 🎉 Initial Release of prerender-redis-cache-ng

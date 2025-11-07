@@ -1,6 +1,6 @@
 {
   "name": "prerender-redis-cache-ng",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Prerender plugin for Redis caching - Next Generation with ES6, comprehensive tests, and auto-reconnection",
   "main": "index.js",
   "scripts": {
