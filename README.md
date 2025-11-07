@@ -112,6 +112,21 @@ npm run test:coverage
 
 See [TESTING.md](TESTING.md) for detailed testing information.
 
+Changelog
+---------
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and detailed changes.
+
+## Recent Updates
+
+- ✅ **Cache Invalidation**: DELETE requests for single URL and pattern-based deletion
+- ✅ **ES6 Refactoring**: Modern JavaScript with arrow functions, const/let, template literals
+- ✅ **Comprehensive Tests**: 33+ tests with 77.94% coverage
+- ✅ **CI/CD**: GitHub Actions + Codecov integration
+- ✅ **SCAN Command**: Non-blocking pattern matching (production-safe)
+- ✅ **Enhanced Error Handling**: Automatic reconnection, validation, graceful degradation
+- ✅ **Better Documentation**: Testing guide, development docs, API examples
+
 Todo
 ----
 
