@@ -1,9 +1,26 @@
-prerender-redis-cache
-=======================
+prerender-redis-cache-ng
+========================
 
 [![Tests](https://github.com/7a6163/prerender-redis-cache/actions/workflows/test.yml/badge.svg)](https://github.com/7a6163/prerender-redis-cache/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/7a6163/prerender-redis-cache/branch/master/graph/badge.svg)](https://codecov.io/gh/7a6163/prerender-redis-cache)
-[![npm version](https://badge.fury.io/js/prerender-redis-cache.svg)](https://www.npmjs.com/package/prerender-redis-cache)
+[![npm version](https://badge.fury.io/js/prerender-redis-cache-ng.svg)](https://www.npmjs.com/package/prerender-redis-cache-ng)
+[![Node.js Version](https://img.shields.io/node/v/prerender-redis-cache-ng.svg)](https://www.npmjs.com/package/prerender-redis-cache-ng)
+
+**Next Generation** Prerender plugin for Redis caching with modern ES6+, comprehensive tests, and production-ready features.
+
+> ⚠️ **Note:** This is a modernized fork of [prerender-redis-cache](https://github.com/jonathanbennett/prerender-redis-cache) with significant improvements and new features.
+
+## ✨ What's New (NG)
+
+- 🚀 **ES6+ Refactored**: Modern JavaScript with arrow functions, const/let, template literals
+- 🗑️ **Cache Invalidation**: DELETE requests for single URL and pattern-based deletion
+- 🔄 **Auto-Reconnection**: Automatic Redis reconnection with exponential backoff
+- ⚡ **SCAN Command**: Non-blocking pattern matching (production-safe, no KEYS)
+- 🛡️ **Enhanced Error Handling**: Graceful degradation, validation, defensive programming
+- ✅ **Comprehensive Tests**: 33+ tests with 77.94% coverage
+- 🔧 **CI/CD Ready**: GitHub Actions + Codecov integration
+- 📚 **Better Documentation**: Testing guide, API examples, development docs
+- 🐛 **Bug Fixes**: Fixed TTL=0 handling, header validation, JSON parsing errors
 
 Prerender plugin for Redis caching, to be used with the prerender node application from https://github.com/prerender/prerender.
 
@@ -12,16 +29,27 @@ How it works
 
 This plugin stores pages returned through prerender in a redis instance. Currently, it caches the pages for 1 day then expires them. This can be overridden by specifying the env variable "process.env.PAGE_TTL" in seconds. To never expire you should set the `PAGE_TTL` variable to 0.
 
-How to use
-----------
+## 📦 Installation
 
-In your local prerender project run:
+Install via npm:
 
-    $ npm install prerender-redis-cache --save
+```bash
+npm install prerender-redis-cache-ng --save
+```
 
-Then in the server.js that initializes the prerender:
+## 🚀 Quick Start
 
-    server.use(require('prerender-redis-cache'));
+In your prerender server.js:
+
+```javascript
+const prerender = require('prerender');
+const server = prerender();
+
+// Use the Redis cache plugin
+server.use(require('prerender-redis-cache-ng'));
+
+server.start();
+```
 
 Configuration
 -------------

@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0] - 2025-01-07
+
+### 🎉 Initial Release of prerender-redis-cache-ng
+
+This is the first release of `prerender-redis-cache-ng` (Next Generation), a modernized fork of `prerender-redis-cache` with significant improvements and new features.
 
 ### Added
 - **Cache Invalidation**: Support for DELETE requests to invalidate cached entries

@@ -1,28 +1,46 @@
 {
-  "name": "prerender-redis-cache",
-  "version": "0.2.2",
-  "description": "Prerender plugin for Redis caching",
+  "name": "prerender-redis-cache-ng",
+  "version": "1.0.0",
+  "description": "Prerender plugin for Redis caching - Next Generation with ES6, comprehensive tests, and auto-reconnection",
   "main": "index.js",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "prepublishOnly": "npm test"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/jonathanbennett/prerender-redis-cache.git"
+    "url": "git://github.com/7a6163/prerender-redis-cache.git"
   },
   "keywords": [
     "prerender",
     "redis",
-    "cache"
+    "cache",
+    "es6",
+    "cache-invalidation",
+    "scan",
+    "typescript-ready"
   ],
   "author": "Jonathan Bennett",
+  "contributors": [
+    "Zac (https://github.com/7a6163)"
+  ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jonathanbennett/prerender-redis-cache/issues"
+    "url": "https://github.com/7a6163/prerender-redis-cache/issues"
   },
-  "homepage": "https://github.com/jonathanbennett/prerender-redis-cache",
+  "homepage": "https://github.com/7a6163/prerender-redis-cache",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "index.js",
+    "lib/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "redis": "^5.9.0"
   },
