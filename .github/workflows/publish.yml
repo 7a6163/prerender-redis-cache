@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+  id-token: write  # Required for provenance
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -28,8 +32,8 @@ jobs:
     - name: Run tests with coverage
       run: npm run test:coverage
 
-    - name: Publish to npm
-      run: npm publish
+    - name: Publish to npm with provenance
+      run: npm publish --provenance --access public
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
