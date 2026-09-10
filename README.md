@@ -127,15 +127,20 @@ Fantastic Prerender team.
 Testing
 -------
 
-This project includes a comprehensive test suite using Jest with **real Redis integration tests** for accurate behavior validation.
+Two suites run under Jest: **real Redis integration tests** for end-to-end
+behavior, and **unit tests** with a faked client for the connection lifecycle and
+error paths that a healthy server never reaches.
+
+Both are enforced at **100% coverage** and a **100% mutation score**
+([Stryker](https://stryker-mutator.io/)).
 
 ### Prerequisites
 
-Tests require a running Redis server:
+The integration tests require a running Redis server:
 
 ```bash
 # Using Docker (recommended)
-docker run -d -p 6379:6379 redis:latest
+docker run -d -p 6379:6379 valkey/valkey:9-alpine
 
 # Or use your local Redis instance
 ```
@@ -143,17 +148,13 @@ docker run -d -p 6379:6379 redis:latest
 ### Run tests
 
 ```bash
-npm test
+npm test                # both suites
+npm run test:coverage   # fails below 100% on any metric
+npm run test:mutation   # Stryker; fails below a 100% mutation score
 ```
 
-Run tests with coverage:
-```bash
-npm run test:coverage
-```
-
-**Note:** Tests use Redis database 15 to avoid conflicts with production data and automatically clean up after each test.
-
-See [TESTING.md](TESTING.md) for detailed testing information.
+**Note:** Integration tests use Redis database 15 to avoid conflicts with
+production data and clean up after each test. The unit tests need no Redis.
 
 Changelog
 ---------
@@ -161,6 +162,15 @@ Changelog
 See [CHANGELOG.md](CHANGELOG.md) for version history and detailed changes.
 
 ## Recent Updates
+
+### v1.1.0 (2026-09-10)
+- **Fixed**: reconnection gave up after ~5.5s, leaving the process permanently
+  cacheless after any Redis restart longer than that
+- **Fixed**: bodyless responses (204/301/410) threw and hung the request
+- **Fixed**: `_closeConnection()` hung while the client was reconnecting
+- **Performance**: wildcard invalidation now `UNLINK`s each SCAN batch instead of
+  buffering every match into one blocking `DEL`
+- **Added**: oxlint, 100% coverage gate, and 100% mutation score gate (Stryker)
 
 ### v1.0.4 (2025-11-07)
 - 🔧 **CI/CD**: Fixed Jest hanging issue with `--forceExit` flag

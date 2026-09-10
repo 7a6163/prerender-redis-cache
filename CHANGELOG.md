@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-09-10
+
+### 🛡️ Stability & Performance
+
+Fixes three ways the cache could stop working, and locks the module down behind
+100% test coverage and a 100% mutation score.
+
+### Fixed
+- **Reconnection no longer gives up.** `reconnectStrategy` returned `false` after
+  10 attempts, and the backoff meant those elapsed in ~5.5 seconds. Any Redis
+  restart or failover longer than that left the client permanently disconnected
+  and the process cacheless until it was restarted. It now backs off to a 5s cap
+  and retries indefinitely — while Redis is down every hook already falls through
+  to `next()`, so the only cost of retrying is one socket.
+  - The first retry no longer fires with a 0ms delay (node-redis passes `0` for
+    the first attempt).
+- **Bodyless responses no longer hang the request.** `req.prerender.content.toString()`
+  ran outside the `try`, so a 204/300/301/410 with no content threw a `TypeError`
+  in an async function whose caller ignored the promise: `next()` was never
+  called and the request hung until the client timed out.
+- **`pageLoaded` skips entries with no URL** instead of writing under a garbage key.
+- **`_closeConnection()` no longer hangs.** `quit()` waits for a live connection,
+  which never settles while the client is reconnecting; it now destroys the
+  client in that state.
+- **Cache-key building fails loudly.** It moved out of `handleCacheGet`'s `try`,
+  so a bad URL is no longer swallowed and reported as a cache miss.
+
+### Changed
+- **Pattern deletion no longer blocks Redis.** `DELETE` with a wildcard buffered
+  every matching key in memory (with an O(n²) `concat`) and then issued one giant
+  `DEL`, which blocks the server for its whole duration. It now `UNLINK`s each
+  SCAN batch as it arrives, with `COUNT` raised from 100 to 1000.
+  - Because deletion is now incremental, a mid-way failure reports how many keys
+    were already removed: the 500 response carries a `deleted` count.
+- Published tarball no longer ships the test suites (75KB → 12KB package).
+
+### Removed
+- Dead `url.parse()` block (a deprecated API, DEP0169) whose parsed database was
+  never read — node-redis takes the database from the URL itself.
+- Unused `RECONNECT_TIMEOUT` constant and the write-only `reconnectAttempts` counter.
+- The redis-mock fallback branch in the connect path; there is no redis-mock.
+
+### Added
+- **`oxlint`** with `no-undef` enabled, wired into both workflows (`npm run lint`).
+- **Unit test suite** (`lib/prerenderRedisCache.internals.test.js`) that fakes the
+  `redis` module, covering URL resolution, reconnect backoff, connection lifecycle
+  events and every error path — the things a healthy Redis can never exercise.
+  Runs in ~0.2s with no server.
+- **100% coverage gate** (`coverageThreshold` in the jest config).
+- **Mutation testing** with [Stryker](https://stryker-mutator.io/) at a 100% score
+  gate (`npm run test:mutation`), run in CI on Node 24.
+
 ## [1.0.4] - 2025-11-07
 
 ### 🚀 Protocol-Agnostic Cache Keys

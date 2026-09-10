@@ -1,0 +1,32 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "packageManager": "npm",
+  "testRunner": "jest",
+  "jest": {
+    "projectType": "custom",
+    "config": {
+      "testEnvironment": "node",
+      "testMatch": [
+        "**/*.internals.test.js"
+      ]
+    }
+  },
+  "mutate": [
+    "lib/prerenderRedisCache.js"
+  ],
+  "coverageAnalysis": "perTest",
+  "reporters": [
+    "progress",
+    "clear-text",
+    "html"
+  ],
+  "htmlReporter": {
+    "fileName": "reports/mutation/index.html"
+  },
+  "thresholds": {
+    "high": 100,
+    "low": 100,
+    "break": 100
+  },
+  "timeoutMS": 10000
+}

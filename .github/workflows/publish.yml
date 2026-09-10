@@ -36,7 +36,11 @@ jobs:
 
     - run: npm ci
 
+    - run: npm run lint
+
     - run: npm test -- --forceExit
+
+    - run: npm run test:mutation
 
     - uses: JS-DevTools/npm-publish@v4
 
