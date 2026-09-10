@@ -14,14 +14,17 @@ prerender-redis-cache-ng
 
 - 🚀 **ES6+ Refactored**: Modern JavaScript with arrow functions, const/let, template literals
 - 🗑️ **Cache Invalidation**: DELETE requests for single URL and pattern-based deletion
-- 🔄 **Auto-Reconnection**: Automatic Redis reconnection with exponential backoff
-- ⚡ **SCAN Command**: Non-blocking pattern matching (production-safe, no KEYS)
+- 🔄 **Auto-Reconnection**: Backs off to a 5s cap and retries indefinitely — a
+  Redis restart never leaves the process permanently cacheless
+- ⚡ **Non-Blocking Invalidation**: SCAN instead of KEYS, and UNLINK per batch
+  instead of one bulk DEL, so a large purge never stalls the server
+- 🔑 **Protocol-Agnostic Keys**: `http://` and `https://` share one cache entry
 - 🛡️ **Enhanced Error Handling**: Graceful degradation, validation, defensive programming
-- ✅ **Comprehensive Tests**: 33+ tests with 75% coverage (real Redis integration tests)
-- 🔧 **CI/CD Ready**: GitHub Actions + Codecov integration with Redis service
-- 📚 **Better Documentation**: Testing guide, API examples, development docs
+- ✅ **Tested to 100%**: 141 tests at 100% coverage and a 100% mutation score
+  (Stryker), combining real-Redis integration tests with fast unit tests
+- 🔧 **CI/CD Ready**: GitHub Actions + Codecov, with lint, coverage and mutation
+  gates enforced on every push
 - 🐛 **Bug Fixes**: Fixed TTL=0 handling, header validation, JSON parsing errors
-- ⚡ **Fast Tests**: 3x faster test execution (~5s) using real Redis
 
 Prerender plugin for Redis caching, to be used with the prerender node application from https://github.com/prerender/prerender.
 
@@ -59,11 +62,15 @@ By default it will connect to your Redis instance running on localhost and the d
 
 ### Automatic Reconnection
 
-The plugin includes automatic reconnection logic with exponential backoff:
-- Automatically retries connection on failure (up to 10 attempts)
-- Maximum reconnection period: 1 hour
-- Gracefully bypasses cache when Redis is unavailable
-- All connection events are logged for monitoring
+The plugin reconnects on its own and **never gives up**:
+- Backs off by 100ms per attempt, capped at 5 seconds, retrying indefinitely
+- Gracefully bypasses the cache while Redis is unavailable — requests are
+  rendered as normal, never failed
+- Connection events and every failed attempt are logged for monitoring
+
+Retrying forever is deliberate: giving up after a fixed number of attempts left
+the process permanently cacheless after any Redis restart that outlasted them,
+while the only cost of retrying is a single socket.
 
 ### Environment Variables
 
@@ -108,7 +115,23 @@ Response:
 }
 ```
 
-**Note:** Pattern matching uses Redis SCAN command (non-blocking, production-safe) to efficiently find matching cache entries without blocking the Redis server.
+Deletion streams: each SCAN batch is UNLINKed as it arrives, so neither the
+match set nor the delete is ever handled in one blocking chunk — a purge of
+100,000 keys will not stall the server.
+
+Because deletion is incremental, a failure part-way through reports how many
+keys were already removed:
+
+```json
+{
+  "error": "Failed to delete cache entries",
+  "message": "...",
+  "deleted": 2000
+}
+```
+
+**Note:** URLs are cached under protocol-agnostic keys, so deleting
+`http://example.com/page` also clears the `https://` entry.
 
 Acknowledgements
 ----------------
@@ -201,7 +224,14 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and detailed changes.
 - ✅ **Enhanced Error Handling**: Automatic reconnection, validation, graceful degradation
 - ✅ **Better Documentation**: Testing guide, development docs, API examples
 
-Todo
-----
+Known Limitations
+-----------------
 
-* Slightly finer-grain error catching to make sure this plugin doesn't crash prerender for any reason.
+* **Cache keys carry no prefix.** A pattern deletion of `*` will clear every key
+  in the target Redis database, not just prerender's. Give the plugin its own
+  database (`redis://host:6379/1`) if you share the instance.
+* **DELETE is silently skipped while Redis is offline.** The request falls
+  through and renders the page, so a purge can return 200 without having
+  invalidated anything.
+* **Cache writes are awaited.** `pageLoaded` waits for the Redis write before
+  responding, adding that round-trip to every cache miss.
