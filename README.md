@@ -18,6 +18,8 @@ prerender-redis-cache-ng
   Redis restart never leaves the process permanently cacheless
 - ⚡ **Non-Blocking Invalidation**: SCAN instead of KEYS, and UNLINK per batch
   instead of one bulk DEL, so a large purge never stalls the server
+- 🗜️ **Gzip Compression**: cache entries are gzipped — measured **6.7x less
+  Redis memory** on a real page, for 0.36ms on the read path
 - 🔑 **Protocol-Agnostic Keys**: `http://` and `https://` share one cache entry
 - 🛡️ **Enhanced Error Handling**: Graceful degradation, validation, defensive programming
 - ✅ **Tested to 100%**: 141 tests at 100% coverage and a 100% mutation score
@@ -77,6 +79,33 @@ while the only cost of retrying is a single socket.
 - **`PAGE_TTL`**: Cache expiration in seconds (default: 86400 = 1 day)
   - Set to `0` for no expiration
   - Invalid values automatically fall back to the default with a warning
+- **`PAGE_COMPRESS`**: Gzip cache entries (default: on)
+  - Set to `0`, `false`, `off` or `no` to store plain JSON instead
+  - Safe to change at any time — see below
+
+### Compression
+
+Cache entries are gzipped before being written. Rendered HTML compresses hard,
+and Redis memory is the binding cost of a cache — measured on react.dev/learn:
+
+| | Redis `MEMORY USAGE` |
+|---|---|
+| Uncompressed | 320 KB |
+| Gzipped | 48 KB |
+
+That is **6.7x less memory**, for about 0.36ms of decompression on a cache hit
+(a `JSON.parse` of the same page already costs ~1ms).
+
+**Reads always auto-detect the format** by checking gzip's magic bytes, so:
+
+- Upgrading needs no migration and no cache flush. Entries written by older
+  versions stay readable and age out naturally via TTL.
+- `PAGE_COMPRESS` can be flipped either way at any time without stranding
+  anything already cached.
+
+**Turn it off if something outside this plugin reads the cache directly.** Those
+readers will see gzipped bytes rather than JSON. Compression is otherwise
+transparent — the plugin is the only thing that needs to understand the format.
 
 Cache Invalidation
 ------------------
@@ -185,6 +214,12 @@ Changelog
 See [CHANGELOG.md](CHANGELOG.md) for version history and detailed changes.
 
 ## Recent Updates
+
+### v1.2.0 (2026-09-10)
+- **Added**: gzip compression of cache entries — 6.7x less Redis memory,
+  auto-detected on read so no migration or cache flush is needed
+- **Added**: `PAGE_COMPRESS` to disable it (e.g. if another service reads the
+  cache directly)
 
 ### v1.1.1 (2026-09-10)
 - **Docs**: corrected the reconnection section, which still described the

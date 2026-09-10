@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-09-10
+
+### 🗜️ Compression
+
+Cache entries are now gzipped. Rendered HTML compresses hard and Redis memory is
+the binding cost of a cache — measured with Redis `MEMORY USAGE` on
+react.dev/learn (259 KB of HTML):
+
+| | Redis memory |
+|---|---|
+| Uncompressed | 320 KB |
+| Gzipped | 48 KB |
+
+**6.7x less memory**, for ~0.36ms of decompression on a cache hit — a
+`JSON.parse` of the same page already costs roughly 1ms.
+
+### Added
+- **Gzip compression** of cache entries, on by default.
+  - Compression and decompression are async (`zlib.gzip`, not `gzipSync`), so
+    they run on the threadpool instead of blocking every other request in the
+    single prerender process.
+  - Reads go through a Buffer view of the same connection
+    (`withTypeMapping`), so gzip bytes are never UTF-8 decoded.
+- **`PAGE_COMPRESS`** environment variable to disable compression
+  (`0`, `false`, `off` or `no`). Useful if something outside this plugin reads
+  the cache directly and expects JSON.
+
+### Compatibility
+- **No migration, no cache flush.** Reads detect gzip by its magic bytes
+  (`1f 8b`), so entries written by earlier versions stay readable and age out
+  through their normal TTL.
+- **`PAGE_COMPRESS` is safe to flip either way** at any time — turning
+  compression off does not strand entries already stored compressed.
+- ⚠️ **Anything reading the Redis cache outside this plugin will see gzipped
+  bytes.** Set `PAGE_COMPRESS=0` if you have such a reader.
+- Downgrading to 1.1.x makes compressed entries unreadable to the older code.
+  They fail `JSON.parse`, which is already handled as a cache miss, so pages
+  re-render rather than erroring.
+
 ## [1.1.1] - 2026-09-10
 
 ### 📚 Documentation

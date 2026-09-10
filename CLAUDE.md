@@ -61,6 +61,13 @@ Invariants worth preserving:
   batch as it arrives so neither the match set nor the delete is one big chunk.
 - `PAGE_TTL=0` means never expire (`SET` without `EX`); invalid or negative values
   warn and fall back to 86400.
+- **Entries are gzipped, and reads sniff the format.** `isGzipped()` checks the
+  `1f 8b` magic bytes, so pre-compression entries stay readable and `PAGE_COMPRESS`
+  can be flipped either way without stranding the cache. Never make reads assume
+  a format. Reads go through `bufferClient` (a `withTypeMapping` Buffer view of
+  the same connection) — a plain `client.get` would UTF-8 mangle the gzip bytes.
+- Use the **async** `zlib` functions. The prerender server is one Node process
+  serving every request; `gzipSync` on a 250KB page blocks all of them.
 - **`reconnectStrategy` never returns `false`.** Giving up leaves the process
   permanently cacheless; retrying forever costs one socket while every hook
   already bypasses the cache. node-redis passes `0` for the first retry, hence
