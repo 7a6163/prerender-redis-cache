@@ -186,6 +186,10 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and detailed changes.
 
 ## Recent Updates
 
+### v1.1.1 (2026-09-10)
+- **Docs**: corrected the reconnection section, which still described the
+  10-attempt / 1-hour limits that v1.1.0 removed
+
 ### v1.1.0 (2026-09-10)
 - **Fixed**: reconnection gave up after ~5.5s, leaving the process permanently
   cacheless after any Redis restart longer than that

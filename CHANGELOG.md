@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-09-10
+
+### 📚 Documentation
+
+Documentation only — no code changes. Released because `README.md` ships in the
+npm tarball, so the corrections below are only visible on npmjs.com after a
+publish.
+
+### Fixed
+- **Reconnection docs described the behavior 1.1.0 removed.** The README still
+  claimed "up to 10 attempts" and "Maximum reconnection period: 1 hour" — the
+  exact limits that left the process permanently cacheless and that 1.1.0 exists
+  to fix. It now documents the 5s-capped indefinite retry, and why.
+- Corrected stale quality claims ("33+ tests with 75% coverage") to the current
+  141 tests at 100% coverage and a 100% mutation score.
+- "Exponential backoff" corrected to linear.
+
+### Added
+- Documented per-batch `UNLINK` deletion and the partial-failure response, which
+  carries a `deleted` count when a purge fails part-way through.
+- Documented protocol-agnostic keys in the feature list (shipped in 1.0.4 but
+  never listed): deleting an `http://` URL also clears the `https://` entry.
+- **Known Limitations** section, replacing a `Todo` item that 1.1.0 completed:
+  cache keys carry no prefix, `DELETE` is silently skipped while Redis is
+  offline, and cache writes are awaited before responding.
+
 ## [1.1.0] - 2026-09-10
 
 ### 🛡️ Stability & Performance
