@@ -100,7 +100,58 @@ coerced to a string before the next iteration.
 
 ## CI
 
-`.github/workflows/test.yml` runs Node 20/22/24 against a valkey service
-container, plus lint on every version and mutation tests on Node 24 only. Pushing a `v*` tag triggers `publish.yml` (npm publish with provenance
-+ GitHub release). Bump `package.json` version and update `CHANGELOG.md` before
-tagging.
+`.github/workflows/test.yml` runs Node 22/24 against a valkey service container —
+lint and tests on both, coverage and mutation gates on Node 24 only. Pushing a
+`v*` tag triggers `publish.yml`, which re-runs lint, tests and mutation before
+`npm publish` (with provenance) and a GitHub release.
+
+## Releasing
+
+**Pushing a tag publishes to npm, and that is not reversible.** Run the whole
+gate first: `npm run lint && npm test && npm run test:coverage && npm run
+test:mutation`.
+
+### When to bump
+
+Bump whenever a change reaches the npm tarball. `files` ships `index.js`,
+`lib/prerenderRedisCache.js`, `README.md`, `CHANGELOG.md` and `LICENSE` —
+**the README and CHANGELOG are in there**, so a docs-only fix still needs a
+release before anyone sees it on npmjs.com. npm serves the README from the
+tarball, never from GitHub.
+
+That is why 1.1.1 exists: 1.1.0 fixed the reconnection behaviour, but the npm
+page still documented the "10 attempts / 1 hour" limits that release had
+removed, and the only way to correct a published page is to publish again.
+
+Changes to `.github/`, `stryker.config.json`, `.oxlintrc.json`, `CLAUDE.md` or
+the test files never reach the tarball and need no bump.
+
+### The three files move together
+
+All three must be in place by the commit the tag points at. They need not be one
+commit — for 1.1.1 the README landed separately and the tag covered both — but a
+version must never ship ahead of its docs.
+
+1. `npm version --no-git-tag-version <ver>` — updates package.json and both
+   version fields in package-lock.json.
+2. `CHANGELOG.md` — new section above the previous entry, Keep a Changelog
+   headings. Record *why* behaviour changed and the measured numbers, not just
+   what changed.
+3. `README.md` — three places: the "What's New" feature list, the section that
+   explains the feature, and "Recent Updates".
+
+```bash
+git tag -a v<ver> -m "..."
+git push origin master && git push origin v<ver>   # branch first, then the tag
+```
+
+### Choosing the number
+
+- **major** — the package stops installing or working where it used to. 2.0.0
+  raised `engines` to `>=22.15.0`. Note that swapping the stored format from
+  gzip to zstd was *not* itself breaking, because reads stayed compatible; the
+  Node floor was.
+- **minor** — new behaviour or new configuration. 1.2.0 added compression and
+  `PAGE_COMPRESS`. Also used for a fix whose behaviour change is large enough to
+  surprise someone: 1.1.0 turned "reconnection gives up" into "never gives up".
+- **patch** — everything else. 1.1.1 was documentation only.
