@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-09-17
+
+### 🗜️ Zstd Compression
+
+Cache entries are now compressed with zstd instead of gzip. Measured on
+react.dev/learn (259 KB of HTML) with Redis `MEMORY USAGE`:
+
+| | Redis memory | vs uncompressed |
+|---|---|---|
+| Uncompressed | 320 KB | — |
+| gzip (1.2.x) | 48 KB | 6.7x |
+| **zstd (2.0.0)** | **40 KB** | **8.0x** |
+
+zstd wins on both sides: ~17% less memory than gzip, and decompression on a
+cache hit costs ~0.18ms versus gzip's ~0.33ms.
+
+### ⚠️ Breaking
+- **Requires Node.js >= 22.15.0**, where `node:zlib` gained zstd support
+  (`engines` was `>=14.0.0`, which was already inaccurate — `redis@5` requires
+  Node >= 18). Node 18 and 20 users should stay on `1.2.x`.
+- CI now tests Node 22 and 24; Node 20 was dropped (EOL April 2026).
+
+### Changed
+- Writes use zstd at **compression level 9**, measured smaller *and* faster to
+  produce than gzip level 6 on real pages (react.dev/learn: 34 KB in 1.65ms vs
+  gzip's 42 KB in 2.36ms).
+
+### Compatibility
+- **No migration, no cache flush.** Reads sniff magic bytes and understand all
+  three storage eras: zstd (2.0.0+), gzip (1.2.x) and plain JSON (pre-1.2).
+  Everything already cached stays readable and ages out through its normal TTL.
+- `PAGE_COMPRESS` still disables compression, and is still safe to flip either
+  way at any time.
+- ⚠️ Anything reading the Redis cache outside this plugin sees zstd bytes.
+  Set `PAGE_COMPRESS=0` if you have such a reader.
+
+### Fixed
+- Mutation testing was silently finding no tests. Jest's
+  `testPathIgnorePatterns` excludes `/.stryker-tmp/`, but Stryker runs jest
+  *inside* that directory, so the pattern hid the sandbox's own test copies.
+  Stryker's jest config now overrides it.
+
 ## [1.2.0] - 2026-09-10
 
 ### 🗜️ Compression

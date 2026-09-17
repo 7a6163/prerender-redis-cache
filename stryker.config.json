@@ -8,6 +8,9 @@
       "testEnvironment": "node",
       "testMatch": [
         "**/*.internals.test.js"
+      ],
+      "testPathIgnorePatterns": [
+        "/node_modules/"
       ]
     }
   },

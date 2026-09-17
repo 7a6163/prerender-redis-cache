@@ -30,6 +30,11 @@ in `stryker.config.json`) — the integration suite is too slow and timing-depen
 to run once per mutant. So a new branch needs unit coverage, not just integration
 coverage, or the mutation score drops and CI breaks.
 
+That config also re-declares `testPathIgnorePatterns`. package.json ignores
+`/.stryker-tmp/` so `npm test` skips leftover sandboxes, but Stryker runs jest
+*inside* that directory — without the override it finds no tests at all and
+exits with "No tests were executed".
+
 ## Architecture
 
 The module is a singleton with **module-level side effects**: it reads env vars,
@@ -61,13 +66,20 @@ Invariants worth preserving:
   batch as it arrives so neither the match set nor the delete is one big chunk.
 - `PAGE_TTL=0` means never expire (`SET` without `EX`); invalid or negative values
   warn and fall back to 86400.
-- **Entries are gzipped, and reads sniff the format.** `isGzipped()` checks the
-  `1f 8b` magic bytes, so pre-compression entries stay readable and `PAGE_COMPRESS`
-  can be flipped either way without stranding the cache. Never make reads assume
-  a format. Reads go through `bufferClient` (a `withTypeMapping` Buffer view of
-  the same connection) — a plain `client.get` would UTF-8 mangle the gzip bytes.
+- **Writes are zstd; reads sniff the format.** `decode()` checks magic bytes and
+  handles all three storage eras: zstd (2.0.0+), gzip (1.2.x) and plain JSON
+  (pre-1.2). Never make reads assume a format — that is what lets the cache
+  migrate itself and `PAGE_COMPRESS` be flipped either way without stranding it.
+  Reads go through `bufferClient` (a `withTypeMapping` Buffer view of the same
+  connection) — a plain `client.get` would UTF-8 mangle the compressed bytes.
 - Use the **async** `zlib` functions. The prerender server is one Node process
-  serving every request; `gzipSync` on a 250KB page blocks all of them.
+  serving every request; a sync compress of a 250KB page blocks all of them.
+  Note the async and sync zstd APIs frame output differently (a 1-byte size
+  difference), so never compare output across the two in a test.
+- **zstd requires Node >= 22.15.0** — that is why `engines` is pinned there.
+  Do not add a runtime fallback to gzip when zstd is missing: in a mixed-Node
+  fleet the older workers would silently miss on every entry the newer ones
+  wrote. One codec for everyone.
 - **`reconnectStrategy` never returns `false`.** Giving up leaves the process
   permanently cacheless; retrying forever costs one socket while every hook
   already bypasses the cache. node-redis passes `0` for the first retry, hence

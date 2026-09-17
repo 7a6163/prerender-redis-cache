@@ -18,8 +18,8 @@ prerender-redis-cache-ng
   Redis restart never leaves the process permanently cacheless
 - ⚡ **Non-Blocking Invalidation**: SCAN instead of KEYS, and UNLINK per batch
   instead of one bulk DEL, so a large purge never stalls the server
-- 🗜️ **Gzip Compression**: cache entries are gzipped — measured **6.7x less
-  Redis memory** on a real page, for 0.36ms on the read path
+- 🗜️ **Zstd Compression**: cache entries are zstd-compressed — measured **8x less
+  Redis memory** on a real page, for 0.18ms on the read path
 - 🔑 **Protocol-Agnostic Keys**: `http://` and `https://` share one cache entry
 - 🛡️ **Enhanced Error Handling**: Graceful degradation, validation, defensive programming
 - ✅ **Tested to 100%**: 141 tests at 100% coverage and a 100% mutation score
@@ -37,7 +37,9 @@ This plugin stores pages returned through prerender in a redis instance. Current
 
 ## 📦 Installation
 
-Install via npm:
+**Requires Node.js >= 22.15.0** — that is where `node:zlib` gained zstd support.
+On Node 20 or older, use `prerender-redis-cache-ng@1.2.x`, which stores entries
+with gzip instead.
 
 ```bash
 npm install prerender-redis-cache-ng --save
@@ -79,32 +81,39 @@ while the only cost of retrying is a single socket.
 - **`PAGE_TTL`**: Cache expiration in seconds (default: 86400 = 1 day)
   - Set to `0` for no expiration
   - Invalid values automatically fall back to the default with a warning
-- **`PAGE_COMPRESS`**: Gzip cache entries (default: on)
+- **`PAGE_COMPRESS`**: Compress cache entries with zstd (default: on)
   - Set to `0`, `false`, `off` or `no` to store plain JSON instead
   - Safe to change at any time — see below
 
 ### Compression
 
-Cache entries are gzipped before being written. Rendered HTML compresses hard,
-and Redis memory is the binding cost of a cache — measured on react.dev/learn:
+Cache entries are compressed with **zstd** before being written. Rendered HTML
+compresses hard, and Redis memory is the binding cost of a cache — measured on
+react.dev/learn (259 KB of HTML) with Redis `MEMORY USAGE`:
 
-| | Redis `MEMORY USAGE` |
-|---|---|
-| Uncompressed | 320 KB |
-| Gzipped | 48 KB |
+| | Redis memory | vs uncompressed |
+|---|---|---|
+| Uncompressed | 320 KB | — |
+| gzip (1.2.x) | 48 KB | 6.7x |
+| **zstd (2.0.0)** | **40 KB** | **8.0x** |
 
-That is **6.7x less memory**, for about 0.36ms of decompression on a cache hit
-(a `JSON.parse` of the same page already costs ~1ms).
+zstd is smaller *and* cheaper than gzip on both sides: ~17% less memory, and
+decompression on a cache hit costs ~0.18ms versus gzip's ~0.33ms.
 
-**Reads always auto-detect the format** by checking gzip's magic bytes, so:
+**Reads auto-detect the format** by checking magic bytes, so the cache migrates
+itself across all three eras:
 
-- Upgrading needs no migration and no cache flush. Entries written by older
-  versions stay readable and age out naturally via TTL.
-- `PAGE_COMPRESS` can be flipped either way at any time without stranding
-  anything already cached.
+| Written by | Stored as | Still readable |
+|---|---|---|
+| 2.0.0+ | zstd | ✅ |
+| 1.2.x | gzip | ✅ |
+| < 1.2 | plain JSON | ✅ |
+
+Upgrading needs no migration and no cache flush, and `PAGE_COMPRESS` can be
+flipped either way at any time without stranding anything already cached.
 
 **Turn it off if something outside this plugin reads the cache directly.** Those
-readers will see gzipped bytes rather than JSON. Compression is otherwise
+readers will see compressed bytes rather than JSON. Compression is otherwise
 transparent — the plugin is the only thing that needs to understand the format.
 
 Cache Invalidation
@@ -214,6 +223,12 @@ Changelog
 See [CHANGELOG.md](CHANGELOG.md) for version history and detailed changes.
 
 ## Recent Updates
+
+### v2.0.0 (2026-09-17)
+- **Breaking**: requires Node >= 22.15.0 (`node:zlib` zstd support)
+- **Changed**: cache entries are zstd instead of gzip — 8x less Redis memory
+  and ~2x faster decompression
+- Reads still understand gzip and plain-JSON entries, so no migration is needed
 
 ### v1.2.0 (2026-09-10)
 - **Added**: gzip compression of cache entries — 6.7x less Redis memory,
