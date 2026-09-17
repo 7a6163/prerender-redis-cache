@@ -28,9 +28,9 @@ jobs:
           --health-retries 5
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v7
 
-    - uses: actions/setup-node@v5
+    - uses: actions/setup-node@v7
       with:
         node-version: '24'
 
@@ -44,14 +44,11 @@ jobs:
 
     - uses: JS-DevTools/npm-publish@v4
 
+    # actions/create-release is archived; gh is preinstalled on the runner
     - name: Create GitHub Release
-      uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        body: |
-          See [CHANGELOG.md](https://github.com/7a6163/prerender-redis-cache/blob/master/CHANGELOG.md) for details.
-        draft: false
-        prerelease: false
+      run: |
+        gh release create "$GITHUB_REF_NAME" \
+          --title "Release $GITHUB_REF_NAME" \
+          --notes "See [CHANGELOG.md](https://github.com/7a6163/prerender-redis-cache/blob/master/CHANGELOG.md) for details."
