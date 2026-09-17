@@ -23,3 +23,6 @@ coverage
 
 reports/
 .stryker-tmp/
+
+# Local agent context, not part of the repo
+CLAUDE.md
